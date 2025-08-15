@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Location Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 90vh; width: 100%; }
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #status { padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">Live Location Tracker</h2>
+  <div id="status">Waiting for location...</div>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let map, marker, circle;
+
+    // Initialize map at a default location
+    function initMap(lat = 20.5937, lng = 78.9629, zoom = 5) {
+      map = L.map('map').setView([lat, lng], zoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    // Update marker and map center
+    function updateMap(lat, lng, accuracy) {
+      if (marker) {
+        marker.setLatLng([lat, lng]);
+        circle.setLatLng([lat, lng]).setRadius(accuracy);
+      } else {
+        marker = L.marker([lat, lng]).addTo(map)
+          .bindPopup("You are here").openPopup();
+        circle = L.circle([lat, lng], {radius: accuracy, color: 'blue', fillOpacity: 0.1}).addTo(map);
+      }
+      map.setView([lat, lng], 16);
+    }
+
+    // Watch position
+    function startTracking() {
+      if (!navigator.geolocation) {
+        document.getElementById('status').textContent = "Geolocation is not supported by your browser.";
+        return;
+      }
+      document.getElementById('status').textContent = "Locating…";
+      navigator.geolocation.watchPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = pos.coords.accuracy;
+          document.getElementById('status').textContent =
+            Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}, Accuracy: ${accuracy}m;
+          updateMap(lat, lng, accuracy);
+        },
+        err => {
+          document.getElementById('status').textContent = "Unable to retrieve your location.";
+        },
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+    }
+
+    // Initialize
+    initMap();
+    startTracking();
+  </script>
+</body>
+</html>
